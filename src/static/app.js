@@ -370,6 +370,14 @@ document.addEventListener("DOMContentLoaded", () => {
       return;
     }
 
+    const escapeHtml = (value) =>
+      String(value)
+        .replace(/&/g, "&amp;")
+        .replace(/</g, "&lt;")
+        .replace(/>/g, "&gt;")
+        .replace(/"/g, "&quot;")
+        .replace(/'/g, "&#39;");
+
     announcementsList.innerHTML = announcements
       .map((announcement) => {
         const startDate = announcement.start_date ? `Starts ${announcement.start_date}` : "Starts immediately";
@@ -377,7 +385,7 @@ document.addEventListener("DOMContentLoaded", () => {
         return `
           <div class="announcement-card">
             <div class="announcement-card__header">
-              <strong>${announcement.message}</strong>
+              <strong>${escapeHtml(announcement.message)}</strong>
               ${currentUser ? `
                 <div class="announcement-card__actions">
                   <button class="edit-btn" type="button" data-id="${announcement.id}">Edit</button>
