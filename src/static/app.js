@@ -349,9 +349,13 @@ document.addEventListener("DOMContentLoaded", () => {
       return;
     }
 
-    announcementBannerMessages.innerHTML = activeAnnouncements
-      .map((announcement) => `<span class="announcement-pill">${announcement.message}</span>`)
-      .join("");
+    announcementBannerMessages.replaceChildren();
+    activeAnnouncements.forEach((announcement) => {
+      const pill = document.createElement("span");
+      pill.className = "announcement-pill";
+      pill.textContent = announcement.message;
+      announcementBannerMessages.appendChild(pill);
+    });
     announcementBanner.classList.remove("hidden");
   }
 
