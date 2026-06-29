@@ -121,7 +121,7 @@ document.addEventListener("DOMContentLoaded", () => {
         currentUser = JSON.parse(savedUser);
         updateAuthUI();
         // Verify the stored user with the server
-        validateUserSession(currentUser.username);
+        validateUserSession();
       } catch (error) {
         console.error("Error parsing saved user", error);
         logout(); // Clear invalid data
@@ -133,11 +133,9 @@ document.addEventListener("DOMContentLoaded", () => {
   }
 
   // Validate user session with the server
-  async function validateUserSession(username) {
+  async function validateUserSession() {
     try {
-      const response = await fetch(
-        `/auth/check-session?username=${encodeURIComponent(username)}`
-      );
+      const response = await fetch("/auth/check-session");
 
       if (!response.ok) {
         // Session invalid, log out
@@ -221,7 +219,13 @@ document.addEventListener("DOMContentLoaded", () => {
   }
 
   // Logout function
-  function logout() {
+  async function logout() {
+    try {
+      await fetch("/auth/logout", { method: "POST" });
+    } catch (error) {
+      console.error("Error during logout:", error);
+    }
+
     currentUser = null;
     localStorage.removeItem("currentUser");
     updateAuthUI();
@@ -419,7 +423,7 @@ document.addEventListener("DOMContentLoaded", () => {
             `Delete this announcement?`,
             async () => {
               try {
-                const response = await fetch(`/announcements/${encodeURIComponent(announcement.id)}?teacher_username=${encodeURIComponent(currentUser.username)}`, {
+                const response = await fetch(`/announcements/${encodeURIComponent(announcement.id)}`, {
                   method: "DELETE",
                 });
                 const result = await response.json();
@@ -1029,8 +1033,8 @@ document.addEventListener("DOMContentLoaded", () => {
       const announcementId = announcementIdInput.value;
       const response = await fetch(
         announcementId
-          ? `/announcements/${encodeURIComponent(announcementId)}?teacher_username=${encodeURIComponent(currentUser.username)}`
-          : `/announcements?teacher_username=${encodeURIComponent(currentUser.username)}`,
+          ? `/announcements/${encodeURIComponent(announcementId)}`
+          : "/announcements",
         {
           method: announcementId ? "PUT" : "POST",
           headers: { "Content-Type": "application/json" },

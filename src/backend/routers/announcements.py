@@ -6,10 +6,11 @@ from datetime import date, datetime
 from typing import Any, Dict, List, Optional
 from uuid import uuid4
 
-from fastapi import APIRouter, HTTPException, Query
+from fastapi import APIRouter, Cookie, HTTPException
 from pydantic import BaseModel, Field
 
-from ..database import announcements_collection, teachers_collection
+from ..database import announcements_collection
+from .auth import SESSION_COOKIE_NAME, get_authenticated_teacher
 
 router = APIRouter(
     prefix="/announcements",
@@ -50,15 +51,10 @@ def list_announcements() -> List[Dict[str, Any]]:
 @router.post("", status_code=201)
 def create_announcement(
     payload: AnnouncementPayload,
-    teacher_username: Optional[str] = Query(None),
+    session_token: Optional[str] = Cookie(None, alias=SESSION_COOKIE_NAME),
 ) -> Dict[str, Any]:
     """Create a new announcement. Requires a signed-in teacher account."""
-    if not teacher_username:
-        raise HTTPException(status_code=401, detail="Authentication required for this action")
-
-    teacher = teachers_collection.find_one({"_id": teacher_username})
-    if not teacher:
-        raise HTTPException(status_code=401, detail="Invalid teacher credentials")
+    get_authenticated_teacher(session_token)
 
     start_date = _coerce_date(payload.start_date)
     expiration_date = _coerce_date(payload.expiration_date)
@@ -86,15 +82,10 @@ def create_announcement(
 def update_announcement(
     announcement_id: str,
     payload: AnnouncementPayload,
-    teacher_username: Optional[str] = Query(None),
+    session_token: Optional[str] = Cookie(None, alias=SESSION_COOKIE_NAME),
 ) -> Dict[str, Any]:
     """Update an announcement. Requires a signed-in teacher account."""
-    if not teacher_username:
-        raise HTTPException(status_code=401, detail="Authentication required for this action")
-
-    teacher = teachers_collection.find_one({"_id": teacher_username})
-    if not teacher:
-        raise HTTPException(status_code=401, detail="Invalid teacher credentials")
+    get_authenticated_teacher(session_token)
 
     start_date = _coerce_date(payload.start_date)
     expiration_date = _coerce_date(payload.expiration_date)
@@ -123,15 +114,10 @@ def update_announcement(
 @router.delete("/{announcement_id}")
 def delete_announcement(
     announcement_id: str,
-    teacher_username: Optional[str] = Query(None),
+    session_token: Optional[str] = Cookie(None, alias=SESSION_COOKIE_NAME),
 ) -> Dict[str, Any]:
     """Delete an announcement. Requires a signed-in teacher account."""
-    if not teacher_username:
-        raise HTTPException(status_code=401, detail="Authentication required for this action")
-
-    teacher = teachers_collection.find_one({"_id": teacher_username})
-    if not teacher:
-        raise HTTPException(status_code=401, detail="Invalid teacher credentials")
+    get_authenticated_teacher(session_token)
 
     result = announcements_collection.delete_one({"_id": announcement_id})
     if result.deleted_count == 0:
